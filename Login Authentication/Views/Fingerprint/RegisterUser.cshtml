@@ -1,0 +1,230 @@
+﻿@model net_core_fingerprint_authorization.Models.FingerprintModel
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+@{
+    ViewData["Title"] = "RegisterUser";
+}
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.js"></script>
+<h4>Register Users</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="RegisterUser">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Username" class="control-label"></label>
+                <input asp-for="Username" class="form-control" required />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="EmailID" class="control-label"></label>
+                <input asp-for="EmailID" class="form-control" required />
+                <span asp-validation-for="EmailID" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Password" class="control-label"></label>
+                @*<input asp-for="Password" type="password" id="txtPassword" class="form-control" required />*@
+                <input asp-for="Password" type="password" placeholder="Password" id="password" class="form-control" required />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ComparePassword" class="control-label"></label>
+                @*<input asp-for="ComparePassword" type="password" id="txtConfirmPassword" class="form-control" required />*@
+                <input asp-for="ComparePassword" type="password" placeholder="Confirm Password" id="confirm_password" class="form-control" required />
+                <span asp-validation-for="ComparePassword" class="text-danger"></span>
+            </div>
+            @*<div class="form-group">
+                <label asp-for="TemplateFormatDB" class="control-label"></label>*@
+                @*<input type="text" size="800" asp-for="templateFormatCompare" class="form-control" id="demo1" autocomplete="on"/>*@
+                @*<input type="text" size="800" id="demo1">*@
+                @*<span asp-for="templateFormatCompare" class="control-label" id="demo1" />*@
+
+                @*<span asp-validation-for="TemplateFormatDB" class="text-danger"></span>
+            </div>*@
+            <br>
+        <div class="form-group">
+
+            <img asp-for="FingerprintImage" name="FetchImage" id="FPImage1" alt="Fingerpint Image" height=230 width=150 src="~/images/fingerScan.png"> <br>
+
+            <button type="button" id="getKey" hidden="hidden" class="btn btn-outline-primary" onclick='document.getElementById("demo1").innerHTML = template_1'>Get Key</button>
+            <br>
+
+            <p>
+            <input type="button" value="Click to Scan" class="btn btn-outline-warning" style="text-decoration-color:black;cursor:pointer" onclick="CallSGIFPGetData(SuccessFunc1, ErrorFunc)">
+            <div class="form-group">
+                <input id="SubmitButton" style="display:none" type="submit" value="Submit" class="btn btn-outline-primary" />
+            </div>
+            <br>
+            <textarea style="visibility:hidden" class="form-control" id="demo1" name="TocompareFingerPrint" readonly></textarea>
+
+        </div>
+        </form>
+    </div>
+</div>
+<p>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    @*<script type="text/javascript">
+        $(function () {
+            $("#SubmitButton").click(function () {
+                var password = $("#txtPassword").val();
+                var confirmPassword = $("#txtConfirmPassword").val();
+                if (password != confirmPassword) {
+                    alert("Passwords do not match. Please enter valid passwords !");
+                    return false;
+                }
+                return true;
+            });
+        });
+    </script>*@
+    <script>
+        var password = document.getElementById("password")
+            , confirm_password = document.getElementById("confirm_password");
+
+        function validatePassword() {
+            if (password.value != confirm_password.value) {
+                confirm_password.setCustomValidity("Passwords donot match");
+            } else {
+                confirm_password.setCustomValidity('');
+            }
+        }
+
+        password.onchange = validatePassword;
+        confirm_password.onkeyup = validatePassword;
+        </script>
+
+    @section Scripts {
+
+        <script type="text/javascript">
+            // Add the following code if you want the name of the file appear on select
+            $(".custom-file-input").on("change", function () {
+                var fileName = $(this).val().split("\\").pop();
+                $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+            });
+        </script>
+    }
+    <script>
+        $(document).ready(function () {
+            $("buttonScan").click(function () {
+                $("buttonkey")[0].click();
+            });
+        });
+    </script>
+
+    <script type="text/javascript">
+        var template_1 = "";
+        var template_2 = "";
+
+        function SuccessFunc1(result) {
+            if (result.ErrorCode == 0) {
+                /* Display BMP data in image tag
+                BMP data is in base 64 format
+                */
+                if (result != null && result.BMPBase64.length > 0) {
+                    document.getElementById('FPImage1').src = "data:image/bmp;base64," + result.BMPBase64;
+                }
+                template_1 = result.TemplateBase64;
+                //document.write(template_1);
+                document.cookie = "template_1 = " + template_1;
+                $("#getKey").click();
+                $("#SubmitButton").show()
+
+            }
+            else {
+                alert("Fingerprint Capture Error Code: " + result.ErrorCode + ".\nDescription: " + ErrorCodeToString(result.ErrorCode) + ".");
+            }
+        }
+
+        function ErrorFunc(status) {
+            /*
+            If you reach here, user is probabaly not running the
+            service. Redirect the user to a page where he can download the
+            executable and install it.
+            */
+            alert("Check if SGIBIOSRV is running; status = " + status + ":");
+        }
+
+        function CallSGIFPGetData(successCall, failCall) {
+            var uri = "https://localhost:8443/SGIFPCapture";
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    fpobject = JSON.parse(xmlhttp.responseText);
+                    successCall(fpobject);
+                }
+                else if (xmlhttp.status == 404) {
+                    failCall(xmlhttp.status)
+                }
+            }
+            xmlhttp.onerror = function () {
+                failCall(xmlhttp.status);
+            }
+            var params = "Timeout=" + "10000";
+            params += "&Quality=" + "50";
+            params += "&licstr=" + encodeURIComponent(secugen_lic);
+            params += "&templateFormat=" + "ISO";
+            xmlhttp.open("POST", uri, true);
+            xmlhttp.send(params);
+        }
+
+
+        function failureFunc(error) {
+            alert("On Match Process, failure has been called");
+        }
+
+    </script>
+
+    <script type="text/javascript">
+        // nice global area, so that only 1 location, contains this information
+        // var secugen_lic = "hE/78I5oOUJnm5fa5zDDRrEJb5tdqU71AVe+/Jc2RK0="; // webapi.secugen.com
+        var secugen_lic = "";
+
+        function ErrorCodeToString(ErrorCode) {
+            var Description;
+            switch (ErrorCode) {
+                // 0 - 999 - Comes from SgFplib.h
+                // 1,000 - 9,999 - SGIBioSrv errors
+                // 10,000 - 99,999 license errors
+                case 51:
+                    Description = "System file load failure";
+                    break;
+                case 52:
+                    Description = "Sensor chip initialization failed";
+                    break;
+                case 53:
+                    Description = "Device not found";
+                    break;
+                case 54:
+                    Description = "Fingerprint image capture timeout";
+                    break;
+                case 55:
+                    Description = "No device available";
+                    break;
+                case 56:
+                    Description = "Driver load failed";
+                    break;
+                case 57:
+                    Description = "Wrong Image";
+                    break;
+                case 58:
+                    Description = "Lack of bandwidth";
+                    break;
+                case 59:
+                    Description = "Device Busy";
+                    break;
+                case 60:
+                    Description = "Cannot get serial number of the device";
+                    break;
+                case 61:
+                    Description = "Unsupported device";
+                    break;
+                case 63:
+                    Description = "SgiBioSrv didn't start; Try image capture again";
+                    break;
+                default:
+                    Description = "Unknown error code or Update code to reflect latest result";
+                    break;
+            }
+            return Description;
+        }
+
+    </script>

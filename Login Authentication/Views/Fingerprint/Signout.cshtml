@@ -1,0 +1,16 @@
+﻿@model net_core_fingerprint_authorization.Models.FingerprintModel
+
+@{
+    ViewData["Title"] = "Signout";
+}
+
+<h1>You have been logged out</h1>
+
+
+<div>
+    <a asp-action="Login" asp-controller="Fingerprint">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
